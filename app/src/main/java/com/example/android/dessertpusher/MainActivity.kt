@@ -21,8 +21,6 @@ class MainActivity : AppCompatActivity(), LifecycleObserver {
     private lateinit var binding: ActivityMainBinding
     private lateinit var dessertTimer: DessertTimer
 
-    /** Dessert Data **/
-
     /**
      * Simple data class that represents a dessert. Includes the resource id integer associated with
      * the image, the price it's sold for, and the startProductionAmount, which determines when
@@ -53,7 +51,15 @@ class MainActivity : AppCompatActivity(), LifecycleObserver {
 
         Timber.i("onCreate called")
         dessertsSold = 0
-        dessertTimer = DessertTimer()
+        dessertTimer = DessertTimer(this.lifecycle)
+
+        if (savedInstanceState != null) {
+            // Get all the game state information from the bundle, set it
+            revenue = savedInstanceState.getInt(KEY_REVENUE, 0)
+            dessertsSold = savedInstanceState.getInt(KEY_DESSERT_SOLD, 0)
+            dessertTimer.secondsCount = savedInstanceState.getInt(KEY_TIMER_SECONDS, 0)
+            showCurrentDessert()
+        }
 
         // Use Data Binding to get reference to the views
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
@@ -73,13 +79,11 @@ class MainActivity : AppCompatActivity(), LifecycleObserver {
     override fun onStart() {
         super.onStart()
         Timber.i("onStart called")
-        dessertTimer.startTimer()
     }
 
     override fun onStop() {
         super.onStop()
         Timber.i("onStop Called")
-        dessertTimer.stopTimer()
     }
 
     override fun onDestroy() {
@@ -102,12 +106,23 @@ class MainActivity : AppCompatActivity(), LifecycleObserver {
         Timber.i("onRestart Called")
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putInt(KEY_REVENUE, revenue)
+        outState.putInt(KEY_DESSERT_SOLD, dessertsSold)
+        outState.putInt(KEY_TIMER_SECONDS, dessertTimer.secondsCount)
+        Timber.i("OnSaveInstance called")
+        super.onSaveInstanceState(outState)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        Timber.i("onRestoreInstanceState Called")
+    }
+
     /**
      * Updates the score when the dessert is clicked. Possibly shows a new dessert.
      */
     private fun onDessertClicked() {
-
-        // Update the score
         revenue += currentDessert.price
         dessertsSold++
 
@@ -170,5 +185,11 @@ class MainActivity : AppCompatActivity(), LifecycleObserver {
             R.id.shareMenuButton -> onShare()
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    companion object {
+        const val KEY_REVENUE = "revenue_key"
+        const val KEY_DESSERT_SOLD = "dessert_sold_key"
+        const val KEY_TIMER_SECONDS = "timer_seconds_key"
     }
 }
